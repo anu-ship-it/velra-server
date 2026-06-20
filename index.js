@@ -3,6 +3,7 @@ const cors = require('cors')
 const dotenv = require('dotenv')
 const analyzeRoute = require('./routes/analyze')
 const trendingRoute = require('./routes/trending')
+const articleRoute = require('./routes/article')
 dotenv.config();
 const app = express()
 app.use(cors())
@@ -14,6 +15,8 @@ app.get('/', (req, res) => {
 app.use('/analyze', analyzeRoute)
 // Trending route
 app.use('/trending', trendingRoute)
+// Article route
+app.use('/article', articleRoute)
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
