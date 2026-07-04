@@ -47,3 +47,28 @@ const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+const { createClient } = require('@supabase/supabase-js')
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
+
+app.use(async (req, res, next) => {
+  if (req.path === '/') return next()
+
+  const auth = req.headers['authorization']
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(403).json({ success: false, message: 'Forbidden' })
+  }
+
+  const token = auth.replace('Bearer ', '')
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  if (error || !user) {
+    return res.status(403).json({ success: false, message: 'Forbidden' })
+  }
+
+  req.user = user
+  next()
+})
