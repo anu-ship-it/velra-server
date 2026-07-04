@@ -28,3 +28,14 @@ const limiter = rateLimit({
   message: { success: false, message: 'Too many requests. Try again later.'}
 })
 app.use('/analyze', limiter)
+
+const VELRA_SECRET = process.env.VELRA_SECRET_KEY
+
+app.use((req, res, next) => {
+  if (req.path === '/') return next() // allow health check
+  const key = req.headers['x-velra-key']
+  if (!key || key !== VELRA_SECRET) {
+    return res.status(403).json({ success: false, message: 'Forbidden' })
+  }
+  next()
+})
