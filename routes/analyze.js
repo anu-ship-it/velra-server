@@ -88,6 +88,16 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'No image provided' })
     }
 
+    // Magic bytes check — verify actual image content, not just claimed MIME type
+    const bytes = req.file.buffer.slice(0, 4)
+    const isJpeg = bytes[0] === 0xFF && bytes[1] === 0xD8
+    const isPng  = bytes[0] === 0x89 && bytes[1] === 0x50
+    const isWebp = bytes[0] === 0x52 && bytes[1] === 0x49
+
+    if (!isJpeg && !isPng && !isWebp) {
+      return res.status(400).json({ success: false, message: 'Invalid file type. Please upload an image.' })
+    }
+
     const compressedImage = await sharp(req.file.buffer)
       .resize(800, 800, { fit: 'inside' })
       .jpeg({ quality: 80 })
