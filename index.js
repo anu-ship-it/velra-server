@@ -57,18 +57,20 @@ const supabase = createClient(
 app.use(async (req, res, next) => {
   if (req.path === '/') return next()
 
-  const auth = req.headers['authorization']
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(403).json({ success: false, message: 'Forbidden' })
+  const key = req.headers['x-velra-key']
+  
+  // If valid secret key present, allow through (covers guest users)
+  if (key && key === VELRA_SECRET) {
+    // Try to attach user if JWT present, but don't require it
+    const auth = req.headers['authorization']
+    if (auth && auth.startsWith('Bearer ')) {
+      const token = auth.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(token)
+      if (user) req.user = user
+    }
+    return next()
   }
 
-  const token = auth.replace('Bearer ', '')
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-
-  if (error || !user) {
-    return res.status(403).json({ success: false, message: 'Forbidden' })
-  }
-
-  req.user = user
-  next()
+  return res.status(403).json({ success: false, message: 'Forbidden' })
 })
+
